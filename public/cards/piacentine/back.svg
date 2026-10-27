@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 528" role="img" aria-label="Retro della carta">
+  <title>Retro della carta</title>
+  <defs>
+    <!-- Reticolo a rombi: il motivo classico dei retri italiani, ridisegnato.
+         Contrasto tenuto alto di proposito: a dimensione di gioco (~120 px di
+         larghezza) un motivo delicato sparisce e il retro sembra un rettangolo. -->
+    <pattern id="rombi" width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(45 0 0)">
+      <rect width="34" height="34" fill="#20493a" />
+      <path d="M0 0h34v34H0z" fill="none" stroke="#3f7d5f" stroke-width="2.2" />
+      <circle cx="17" cy="17" r="4.6" fill="#d8ab48" fill-opacity="0.85" />
+      <circle cx="0" cy="0" r="2.2" fill="#d8ab48" fill-opacity="0.5" />
+      <circle cx="34" cy="34" r="2.2" fill="#d8ab48" fill-opacity="0.5" />
+    </pattern>
+    <radialGradient id="lume" cx="50%" cy="40%" r="78%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.14" />
+      <stop offset="70%" stop-color="#000000" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.42" />
+    </radialGradient>
+  </defs>
+
+  <rect width="320" height="528" rx="18" fill="#122c21" />
+  <rect x="9" y="9" width="302" height="510" rx="12" fill="url(#rombi)" />
+  <rect x="9" y="9" width="302" height="510" rx="12" fill="url(#lume)" />
+
+  <!-- Cornice in ottone -->
+  <rect x="9" y="9" width="302" height="510" rx="12" fill="none" stroke="#d8ab48" stroke-width="4" />
+  <rect x="21" y="21" width="278" height="486" rx="7" fill="none" stroke="#d8ab48" stroke-width="1.6" stroke-opacity="0.6" />
+
+  <!-- Rosone centrale, su un disco scuro che lo stacca dal reticolo -->
+  <g transform="translate(160 264)">
+    <circle r="74" fill="#122c21" fill-opacity="0.88" />
+    <g fill="none" stroke="#d8ab48" stroke-width="2.6">
+      <circle r="66" />
+      <circle r="50" stroke-width="1.6" stroke-opacity="0.7" />
+      <g stroke-opacity="0.9" stroke-linecap="round">
+        <path d="M0-66 0-50M0 50 0 66M-66 0-50 0M50 0 66 0" />
+        <path d="M-47-47-35-35M35 35 47 47M47-47 35-35M-35 35-47 47" />
+      </g>
+      <circle r="24" stroke-width="1.6" stroke-opacity="0.55" />
+    </g>
+    <circle r="13" fill="#d8ab48" />
+    <circle r="6" fill="#122c21" />
+  </g>
+
+  <!-- Borchie agli angoli -->
+  <g fill="#d8ab48" fill-opacity="0.85">
+    <circle cx="45" cy="45" r="5.5" />
+    <circle cx="275" cy="45" r="5.5" />
+    <circle cx="45" cy="483" r="5.5" />
+    <circle cx="275" cy="483" r="5.5" />
+  </g>
+</svg>

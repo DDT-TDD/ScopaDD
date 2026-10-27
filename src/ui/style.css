@@ -1,0 +1,1990 @@
+:root {
+  --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --bg-dark: #12151c;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --gold-accent: #f59e0b;
+  --gold-glow: rgba(245, 158, 11, 0.45);
+  --green-capture: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.55);
+  --card-width: 90px;
+  --card-height: 145px;
+  --card-radius: 8px;
+}
+
+/* Regional deck true aspect ratios (Bresciane & Trevisane ~1:2.09; Bergamasche & Triestine ~1:1.83) */
+:root[data-deck="bresciane"],
+:root[data-deck="trevisane"] {
+  --card-width: 72px;
+  --card-height: 150px;
+  --card-radius: 6px;
+}
+
+:root[data-deck="bergamasche"],
+:root[data-deck="triestine"] {
+  --card-width: 82px;
+  --card-height: 150px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --card-width: 65px;
+    --card-height: 105px;
+  }
+  :root[data-deck="bresciane"],
+  :root[data-deck="trevisane"] {
+    --card-width: 52px;
+    --card-height: 109px;
+  }
+  :root[data-deck="bergamasche"],
+  :root[data-deck="triestine"] {
+    --card-width: 59px;
+    --card-height: 108px;
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-dark);
+  color: var(--text-main);
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 3D WebGL Canvas */
+#canvas-3d {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* HUD Header */
+.app-hud {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(15, 18, 25, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.hud-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-pill, .turn-pill {
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.turn-pill {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+}
+
+.avatar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 1rem;
+}
+
+/* Buttons */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.btn-icon {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.btn-pill {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  border: 1px solid transparent;
+}
+.btn-pill:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.btn-pill.active {
+  background: #10b981;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1e150f;
+  font-weight: 700;
+  padding: 12px 24px;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+.btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.55);
+}
+
+/* Deck Picker in HUD */
+.deck-picker-group {
+  position: relative;
+}
+.deck-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: rgba(20, 24, 34, 0.96);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 230px;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.65);
+  z-index: 100;
+  animation: popIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.deck-dropdown.hidden {
+  display: none;
+}
+.deck-opt-btn {
+  background: transparent;
+  color: #cbd5e1;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.88rem;
+  border-radius: 8px;
+  transition: all 0.14s ease;
+}
+.deck-opt-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transform: translateX(2px);
+}
+.deck-opt-btn.active {
+  background: rgba(245, 158, 11, 0.22);
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------------------------
+   RICH TABLE ATMOSPHERES (2D & Fallback)
+   Padded cushion rail, brass trim, authentic photographic textures & vignette
+   ------------------------------------------------------------------------- */
+.game-table-view {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 20px;
+  transition: background 0.4s ease;
+}
+
+/* 1. Trattoria Rustica: Scenic Walnut wood with warm overhead lamp */
+.game-table-view.atmo-trattoria {
+  background: url('/backgrounds/trattoria.webp') center / cover no-repeat;
+  box-shadow: inset 0 0 80px rgba(10, 6, 4, 0.9);
+}
+
+/* 2. Salotto da Gioco: Luxury Emerald Felt with mahogany & brass rail */
+.game-table-view.atmo-salotto {
+  background: url('/backgrounds/salotto.webp') center / cover no-repeat;
+  box-shadow: inset 0 0 80px rgba(0, 20, 15, 0.9);
+}
+
+/* 3. Piazza al Tramonto: Italian Carrara Marble with golden sunset glow */
+.game-table-view.atmo-piazza {
+  background: url('/backgrounds/piazza.webp') center / cover no-repeat;
+  box-shadow: inset 0 0 80px rgba(10, 10, 12, 0.9);
+}
+
+/* 4. Notte Stellata: Midnight Starry Sky & Indigo Linen */
+.game-table-view.atmo-notte {
+  background: url('/backgrounds/notte.webp') center / cover no-repeat;
+  box-shadow: inset 0 0 80px rgba(4, 7, 18, 0.9);
+}
+
+.opponents-bar {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.opponent-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(18, 21, 28, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 6px 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s ease;
+}
+.opponent-pill.active-turn {
+  border-color: #f59e0b;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
+  transform: scale(1.02);
+}
+
+.opp-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+.opp-cards {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* Card Table Felt Playing Area with Padded Cushion Rim & Gold Trim */
+.table-felt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 24px 30px;
+  margin: 12px 16px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 2px solid rgba(245, 158, 11, 0.25);
+  box-shadow:
+    inset 0 0 35px rgba(0, 0, 0, 0.65),
+    0 10px 30px rgba(0, 0, 0, 0.4);
+  position: relative;
+  min-height: 240px;
+}
+
+.empty-table-msg {
+  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-style: italic;
+  letter-spacing: 0.3px;
+}
+
+.math-hint-badge {
+  position: absolute;
+  top: 14px;
+  background: rgba(16, 185, 129, 0.95);
+  color: #fff;
+  padding: 7px 18px;
+  border-radius: 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  animation: popIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* -------------------------------------------------------------------------
+   FLUID SPRING CARD ANIMATIONS & DYNAMICS
+   ------------------------------------------------------------------------- */
+.card-item {
+  width: var(--card-width);
+  height: var(--card-height);
+  border-radius: var(--card-radius);
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), 0 2px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.22s cubic-bezier(0.18, 0.9, 0.2, 1), box-shadow 0.22s ease;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  will-change: transform, box-shadow;
+}
+
+.card-item[data-deck="bresciane"],
+.card-item[data-deck="trevisane"] {
+  width: 72px;
+  height: 150px;
+  border-radius: 6px;
+}
+
+.card-item[data-deck="bergamasche"],
+.card-item[data-deck="triestine"] {
+  width: 82px;
+  height: 150px;
+}
+
+.card-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
+/* Staggered Dealing into Hand */
+.hand-card-enter {
+  animation: handCardEnter 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.25) both;
+}
+
+@keyframes handCardEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(60px) scale(0.8) rotate(-6deg);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.04) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+/* Table Card Flight & Settle */
+.table-card-animate {
+  animation: tableCardSettle 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.25) both;
+}
+
+@keyframes tableCardSettle {
+  0% {
+    opacity: 0;
+    transform: translateY(-45px) scale(1.16) rotate(calc(var(--card-rot, 0deg) + 7deg));
+    box-shadow: 0 25px 45px rgba(0, 0, 0, 0.7);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(2px) scale(0.98) rotate(calc(var(--card-rot, 0deg) - 2deg));
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(var(--card-rot, 0deg));
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.card-item:hover {
+  transform: translateY(-10px) scale(1.04);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.55), 0 0 12px rgba(245, 158, 11, 0.25);
+}
+
+.card-item.selected {
+  transform: translateY(-18px) scale(1.08) !important;
+  box-shadow: 0 0 0 3px #f59e0b, 0 20px 35px rgba(0, 0, 0, 0.65) !important;
+}
+
+.card-item.highlight-capture {
+  box-shadow: 0 0 0 4px #10b981, 0 0 25px var(--green-glow) !important;
+  animation: pulseGreen 1.1s infinite alternate ease-in-out;
+}
+
+@keyframes pulseGreen {
+  0% {
+    box-shadow: 0 0 0 3px #10b981, 0 0 12px var(--green-glow);
+    transform: scale(1) rotate(var(--card-rot, 0deg));
+  }
+  100% {
+    box-shadow: 0 0 0 5px #34d399, 0 0 30px var(--green-glow);
+    transform: scale(1.05) rotate(var(--card-rot, 0deg));
+  }
+}
+
+/* Scopa Celebration Toast */
+.scopa-toast {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1e150f;
+  font-size: 1.6rem;
+  font-weight: 900;
+  padding: 16px 36px;
+  border-radius: 36px;
+  border: 3px solid #fef3c7;
+  box-shadow: 0 0 50px rgba(245, 158, 11, 0.85), 0 14px 35px rgba(0, 0, 0, 0.65);
+  animation: scopaPop 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.3) both;
+  z-index: 80;
+  pointer-events: none;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+@keyframes scopaPop {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+  70% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.scopa-toast.hidden {
+  display: none;
+}
+
+/* Player Tray Bottom */
+.player-tray {
+  position: relative;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(16, 20, 28, 0.94);
+  backdrop-filter: blur(14px);
+  padding: 12px 18px 18px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.45);
+}
+
+.hand-actions {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.turn-prompt {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.wait-turn-indicator {
+  font-size: 0.92rem;
+  color: #f59e0b;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.btn-play-confirm {
+  background: #10b981;
+  color: #fff;
+  padding: 9px 22px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+}
+.btn-play-confirm:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.6);
+}
+
+.btn-choice {
+  background: #3b82f6;
+  color: #fff;
+  padding: 7px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 16px;
+}
+.btn-choice:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.hand-cards {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  padding-bottom: 4px;
+}
+
+/* Modals */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+.modal-card {
+  background: #1a1e29;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  padding: 26px;
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  animation: popIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header,
+.modal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.modal-header h2,
+.modal-header-row h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fde68a;
+  letter-spacing: 0.01em;
+}
+
+.btn-close {
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  padding: 4px 8px;
+}
+.btn-close:hover {
+  color: #fff;
+}
+
+/* Setup Wizard */
+.wizard-card {
+  max-width: 720px;
+}
+
+.wizard-step,
+.wizard-section {
+  margin-bottom: 18px;
+}
+
+.step-label,
+.wizard-label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fde68a;
+  font-size: 0.95rem;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.preset-card,
+.preset-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: left;
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.16s ease;
+}
+.preset-card:hover,
+.preset-btn:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+.preset-card.selected,
+.preset-btn.selected {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.16));
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.preset-title,
+.preset-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #f8fafc;
+  line-height: 1.25;
+}
+.preset-btn.selected .preset-name {
+  color: #fef08a;
+}
+
+.preset-desc,
+.preset-badge {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+.preset-btn.selected .preset-badge {
+  color: #fde68a;
+}
+
+.diff-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.diff-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.16s ease;
+}
+.diff-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.diff-btn.selected {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1e150f;
+  font-weight: 800;
+  border-color: #fbbf24;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #e2e8f0;
+  font-weight: 600;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  border-radius: 10px;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn-pill-opt {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.btn-pill-opt:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.btn-pill-opt.active {
+  background: #f59e0b;
+  color: #1e150f;
+  font-weight: 700;
+  border-color: #f59e0b;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Chat Modal */
+.chat-modal-card {
+  max-width: 500px;
+}
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chat-phrases-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.btn-phrase {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--text-main);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+.btn-phrase:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-2px);
+  border-color: #f59e0b;
+}
+
+.chat-modal-footer {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Score Ceremony Modal */
+.score-ceremony-card {
+  max-width: 520px;
+}
+
+.ceremony-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.ceremony-header h2 {
+  font-size: 1.5rem;
+  color: var(--gold-accent);
+}
+.hand-num {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.score-breakdown-grid {
+  display: grid;
+  grid-template-columns: 2fr repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.grid-header {
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 8px;
+}
+.grid-header.side {
+  text-align: center;
+  color: var(--gold-accent);
+}
+
+.row-label {
+  font-size: 0.9rem;
+  padding: 4px 0;
+}
+.row-val {
+  text-align: center;
+  font-size: 0.9rem;
+  padding: 4px 0;
+  color: var(--text-muted);
+}
+.row-val.win-point {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.grid-footer {
+  font-weight: 700;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+.grid-footer.side {
+  text-align: center;
+  color: #10b981;
+}
+.grid-footer.total {
+  font-size: 1.05rem;
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.winner-announcement {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.winner-announcement h3 {
+  font-size: 1.4rem;
+  color: #f59e0b;
+}
+
+.score-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1rem;
+  padding: 6px 0;
+}
+
+.score-cat {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.score-val {
+  font-weight: 800;
+  color: #fde68a;
+}
+
+/* Solitario View */
+.solitario-screen {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px 64px 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  scroll-behavior: smooth;
+}
+
+.solitario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sol-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.solitario-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.stock-waste-group, .foundations-group {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.pile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.pile-count-badge {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.empty-slot {
+  width: var(--card-width);
+  height: var(--card-height);
+  border-radius: var(--card-radius);
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+.empty-slot.fnd-slot {
+  cursor: pointer;
+}
+
+.empty-slot-msg {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.solitario-tableau {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 1 0 auto;
+  padding-bottom: 48px;
+}
+
+.tableau-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 250px;
+  width: var(--card-width);
+  padding-bottom: 32px;
+}
+
+/* Credits Modal */
+.credits-card {
+  max-width: 650px;
+}
+.credits-intro {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #e2e8f0;
+  margin-bottom: 18px;
+}
+.credit-section {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+.credit-section h4 {
+  color: var(--gold-accent);
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+.credit-section ul {
+  padding-left: 20px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.credit-section li code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #38bdf8;
+}
+
+/* =========================================================================
+   5, 6, 7. FESTIVE & KIDS TABLE ATMOSPHERES (Halloween, Xmas, Bimbi)
+   ========================================================================= */
+
+/* 5. Halloween Stregato: Enchanted purple & glowing pumpkin lantern vignette */
+.game-table-view.atmo-halloween {
+  background: url('/backgrounds/halloween.webp') center / cover no-repeat;
+  box-shadow: inset 0 0 90px rgba(10, 4, 20, 0.95);
+}
+.game-table-view.atmo-halloween .table-felt {
+  border-color: rgba(249, 115, 22, 0.55);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(249, 115, 22, 0.25);
+}
+.game-table-view.atmo-halloween .table-felt::after {
+  content: '🎃 🦇 ✨';
+  position: absolute;
+  bottom: 10px;
+  right: 16px;
+  font-size: 1.35rem;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* 6. Festa di Natale (Xmas): Warm Christmas velvet crimson & pine gold */
+.game-table-view.atmo-xmas {
+  background: url('/backgrounds/xmas.webp') center / cover no-repeat;
+  box-shadow: inset 0 0 90px rgba(25, 8, 8, 0.94);
+}
+.game-table-view.atmo-xmas .table-felt {
+  border-color: rgba(250, 204, 21, 0.6);
+  background: rgba(20, 83, 45, 0.38);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(250, 204, 21, 0.25);
+}
+.game-table-view.atmo-xmas .table-felt::after {
+  content: '🎄 ❄️ ⭐';
+  position: absolute;
+  bottom: 10px;
+  right: 16px;
+  font-size: 1.35rem;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* 7. Regno dei Bimbi (Kids Wonderland): Bright sky, meadow & rainbow confetti */
+.game-table-view.atmo-bimbi {
+  background: url('/backgrounds/bimbi.webp') center / cover no-repeat;
+  box-shadow: inset 0 0 70px rgba(6, 55, 50, 0.85);
+}
+.game-table-view.atmo-bimbi .table-felt {
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.35), 0 0 25px rgba(56, 189, 248, 0.28);
+}
+.game-table-view.atmo-bimbi .table-felt::after {
+  content: '🌈 ⭐ 🎈';
+  position: absolute;
+  bottom: 10px;
+  right: 16px;
+  font-size: 1.35rem;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* =========================================================================
+   HUD GAME MODE SWITCHER TABS & MULTIPLAYER BUTTON
+   ========================================================================= */
+.hud-mode-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  gap: 4px;
+}
+
+.hud-mode-btn {
+  background: transparent;
+  color: #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 9px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hud-mode-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.hud-mode-btn.active {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1e150f;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+}
+
+.mp-trigger-btn {
+  background: rgba(59, 130, 246, 0.22);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #93c5fd;
+}
+.mp-trigger-btn:hover {
+  background: rgba(59, 130, 246, 0.38);
+  color: #fff;
+}
+
+/* =========================================================================
+   KIDS HELPER BADGES ON CARDS (+11 pt, ★ Briscola)
+   ========================================================================= */
+.card-helper-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(16, 185, 129, 0.94);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  z-index: 5;
+}
+.card-helper-badge.badge-trump {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1e150f;
+}
+
+/* =========================================================================
+   BRISCOLA TABLE VIEW & TALLONE (ROTATED TRUMP CARD UNDER DECK)
+   ========================================================================= */
+.briscola-top-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding-top: 8px;
+}
+
+.opponent-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(18, 21, 28, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 6px 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.opp-avatar {
+  font-size: 1.4rem;
+}
+
+.opp-stats {
+  font-size: 0.82rem;
+  color: #fde68a;
+}
+
+.briscola-opp-hand {
+  display: flex;
+  gap: 8px;
+}
+
+.opp-mini-card {
+  width: 50px !important;
+  height: 80px !important;
+  cursor: default;
+}
+.opp-mini-card[data-deck="bresciane"],
+.opp-mini-card[data-deck="trevisane"] {
+  width: 40px !important;
+  height: 84px !important;
+}
+.opp-mini-card[data-deck="bergamasche"],
+.opp-mini-card[data-deck="triestine"] {
+  width: 45px !important;
+  height: 82px !important;
+}
+
+.briscola-middle-area,
+.briscola-center-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 8px 16px;
+}
+
+.briscola-trick-zone,
+.briscola-trick-felt {
+  flex: 1;
+  max-width: 680px;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 2px solid rgba(245, 158, 11, 0.25);
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.65), 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.briscola-played-card-wrap,
+.played-trick-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.played-card-owner,
+.played-by-tag {
+  background: rgba(15, 23, 42, 0.85);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.winning-trick-card .card-item,
+.winning-trick-card {
+  box-shadow: 0 0 0 4px #10b981, 0 0 28px rgba(16, 185, 129, 0.7) !important;
+  transform: scale(1.06) !important;
+}
+
+.briscola-tallone-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 18, 26, 0.72);
+  backdrop-filter: blur(10px);
+  padding: 16px 22px;
+  border-radius: 20px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+  min-width: 195px;
+}
+
+.briscola-trump-pill,
+.briscola-suit-pill {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fde68a;
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 0.82rem;
+}
+
+.tallone-stack {
+  position: relative;
+  width: 150px;
+  height: 155px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tallone-trump-card {
+  position: absolute;
+  transform: rotate(90deg) translateY(-18px) !important;
+  z-index: 1;
+  cursor: default;
+}
+.tallone-trump-card:hover {
+  transform: rotate(90deg) translateY(-22px) scale(1.03) !important;
+}
+
+.tallone-deck-card,
+.tallone-deck-back {
+  position: relative;
+  z-index: 2;
+  transform: translateX(-16px);
+  cursor: default;
+  box-shadow: -4px 6px 0 #cbd5e1, -8px 12px 20px rgba(0, 0, 0, 0.65);
+}
+
+.tallone-count,
+.deck-count-badge {
+  background: rgba(15, 23, 42, 0.92);
+  color: #f8fafc;
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+.hand-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(16, 20, 28, 0.94);
+  backdrop-filter: blur(14px);
+  padding: 12px 18px 18px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.hand-prompt {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.hand-prompt.active-turn {
+  color: #fde68a;
+  font-weight: 700;
+}
+
+.hand-cards-row {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
+
+.tallone-empty-badge {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.briscola-opp-open-cards {
+  display: flex;
+  gap: 6px;
+}
+
+.mini-open-card {
+  width: 44px !important;
+  height: 70px !important;
+  cursor: default;
+}
+.mini-open-card[data-deck="bresciane"],
+.mini-open-card[data-deck="trevisane"] {
+  width: 36px !important;
+  height: 75px !important;
+}
+.mini-open-card[data-deck="bergamasche"],
+.mini-open-card[data-deck="triestine"] {
+  width: 40px !important;
+  height: 73px !important;
+}
+
+/* =========================================================================
+   PASS-AND-PLAY PRIVACY SHIELD & MULTIPLAYER HUB MODAL
+   ========================================================================= */
+.privacy-shield-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 90;
+  background: rgba(10, 14, 22, 0.96);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.privacy-shield-overlay.hidden {
+  display: none;
+}
+
+.privacy-shield-card {
+  background: #1e2433;
+  border: 2px solid rgba(245, 158, 11, 0.45);
+  border-radius: 24px;
+  padding: 36px;
+  max-width: 460px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+.privacy-emoji {
+  font-size: 3.4rem;
+  margin-bottom: 12px;
+}
+.privacy-shield-card h2 {
+  color: #f59e0b;
+  margin-bottom: 10px;
+}
+.privacy-shield-card p {
+  color: #cbd5e1;
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+}
+
+.mp-modal-card {
+  max-width: 780px;
+}
+.mp-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 4px 0 16px;
+}
+.mp-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.mp-feature-card,
+.mp-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+.mp-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.mp-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+.mp-card-badge {
+  align-self: flex-start;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+.mp-feature-card h3,
+.mp-card h3 {
+  font-size: 1.05rem;
+  color: #fde68a;
+  margin-bottom: 4px;
+}
+.mp-feature-card p,
+.mp-card p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  flex: 1;
+}
+
+.mp-action-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.lan-word-box,
+.mp-word-picker {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 12px;
+  border-radius: 12px;
+}
+.lan-word-label,
+.mp-word-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fde68a;
+  margin-bottom: 8px;
+}
+.lan-word-pills,
+.mp-word-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lan-word-pill,
+.word-chip {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  color: #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.word-chip:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.lan-word-pill.active,
+.word-chip.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #34d399;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+}
+.lan-url-box,
+.mp-lan-url-box {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  color: #38bdf8;
+  text-align: center;
+  word-break: break-all;
+}
+.mp-lan-status {
+  color: #34d399;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.mp-lan-url {
+  margin-top: 6px;
+  font-size: 0.92rem;
+  color: #7dd3fc;
+}
+.lan-actions-row,
+.mp-lan-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lan-status-hint {
+  font-size: 0.75rem;
+  color: #34d399;
+  text-align: center;
+}
+
+.remote-actions-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.remote-paste-row,
+.mp-invite-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mp-code-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: #fff;
+  font-size: 0.85rem;
+}
+.mp-copy-feedback,
+.mp-feedback-msg {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #34d399;
+  text-align: center;
+  margin-top: 6px;
+}
+.mp-copy-feedback.hidden,
+.mp-feedback-msg.hidden {
+  display: none;
+}
+
+/* =========================================================================
+   BRISCOLA-STYLE NATURAL ARC ANIMATIONS & SCOPA CAPTURE CHOREOGRAPHY
+   ========================================================================= */
+@keyframes gioca-dal-basso {
+  0% {
+    transform: translate(4%, 130%) rotate(-10deg) scale(0.82);
+    opacity: 0;
+  }
+  62% {
+    transform: translate(-2%, -6%) rotate(4deg) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes gioca-dallalto {
+  0% {
+    transform: translate(-4%, -130%) rotate(10deg) scale(0.82);
+    opacity: 0;
+  }
+  62% {
+    transform: translate(2%, 6%) rotate(-4deg) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.gioca-dal-basso {
+  animation: gioca-dal-basso 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gioca-dallalto {
+  animation: gioca-dallalto 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes vola-verso-il-basso {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  20% {
+    transform: translateY(-4%) scale(1.1) rotate(-4deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(55vh) scale(0.55) rotate(10deg);
+    opacity: 0;
+  }
+}
+
+@keyframes vola-verso-l-alto {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  20% {
+    transform: translateY(4%) scale(1.1) rotate(4deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-55vh) scale(0.55) rotate(-10deg);
+    opacity: 0;
+  }
+}
+
+.vola-giu {
+  animation: vola-verso-il-basso 420ms cubic-bezier(0.45, 0, 0.7, 1) forwards !important;
+}
+
+.vola-su {
+  animation: vola-verso-l-alto 420ms cubic-bezier(0.45, 0, 0.7, 1) forwards !important;
+}
+
+@keyframes respiro {
+  0%, 100% {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+  50% {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), 0 0 0 3px rgba(245, 158, 11, 0.32);
+  }
+}
+
+.in-attesa-di-te {
+  animation: respiro 2.4s ease-in-out infinite;
+}
+
+/* Scopa Middle Arena & Tallone Aside */
+.scopa-middle-arena {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 6px 12px;
+}
+
+.scopa-tallone-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 18, 26, 0.76);
+  backdrop-filter: blur(10px);
+  padding: 16px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+  min-width: 170px;
+}
+
+.scopa-deck-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.scopa-pile-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.84rem;
+  color: #e2e8f0;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  padding-top: 8px;
+  width: 100%;
+}
+
+.opp-hand-backs {
+  display: flex;
+  gap: 4px;
+  margin-left: 6px;
+}
+
+.opp-mini-back {
+  width: 24px !important;
+  height: 38px !important;
+  border-radius: 4px !important;
+  cursor: default;
+}
+
+/* Scopa Played Card & Captured Cards Hold Highlight */
+.scopa-played-choreo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 25;
+}
+
+.scopa-played-card-focus {
+  box-shadow: 0 0 0 4px #f59e0b, 0 16px 35px rgba(0, 0, 0, 0.7) !important;
+}
+
+.scopa-card-captured-hold {
+  box-shadow: 0 0 0 4px #10b981, 0 0 28px rgba(16, 185, 129, 0.75) !important;
+  transform: translateY(-8px) scale(1.06) !important;
+}
+
+/* Interactive Table Card Selection (5+2 vs 4+3) */
+.table-card-capturable {
+  box-shadow: 0 0 0 3px #38bdf8, 0 0 18px rgba(56, 189, 248, 0.55) !important;
+  cursor: pointer;
+}
+.table-card-capturable:hover {
+  transform: translateY(-10px) scale(1.07) !important;
+  box-shadow: 0 0 0 4px #10b981, 0 0 24px rgba(16, 185, 129, 0.75) !important;
+}
+
+.table-card-checked {
+  box-shadow: 0 0 0 4px #10b981, 0 12px 28px rgba(16, 185, 129, 0.75) !important;
+  transform: translateY(-12px) scale(1.08) !important;
+}
+
+.table-card-dimmed {
+  opacity: 0.35;
+  transform: scale(0.92) !important;
+  pointer-events: none;
+}
+
+.multi-choice-banner {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  border-color: #93c5fd !important;
+}
+
+.badge-rank-num {
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #fde68a !important;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  font-size: 0.72rem !important;
+}
+
+/* Capture Options Tray in HandView */
+.capture-options-tray {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.choice-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #fde68a;
+}
+
+.capture-options-btns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-capture-combo {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35));
+  border: 2px solid #10b981;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.btn-capture-combo:hover {
+  background: linear-gradient(135deg, #10b981, #059669);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55);
+}
+
+.combo-math {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #fef08a;
+}
+.btn-capture-combo:hover .combo-math {
+  color: #fff;
+}
+
+.combo-names {
+  font-size: 0.78rem;
+  color: #e2e8f0;
+}
+
+/* =========================================================================
+   TRESSETTE TABLE VIEW, SUIT-FOLLOWING DIMMING & PARTNER SIGNALS
+   ========================================================================= */
+.tressette-top-area {
+  flex-wrap: wrap;
+}
+
+.tressette-trick-zone {
+  position: relative;
+  flex-wrap: wrap;
+  padding-top: 38px;
+}
+
+.tressette-led-suit-banner {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fde68a;
+  font-size: 0.8rem;
+  padding: 3px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.tressette-signal-bubble {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1e150f;
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.5);
+  animation: gioca-dal-basso 260ms ease-out;
+}
+
+.tressette-aside-zone {
+  gap: 10px;
+  max-width: 230px;
+}
+
+.tressette-drawn-reveal {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 8px 10px;
+  width: 100%;
+  text-align: center;
+}
+
+.drawn-reveal-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #93c5fd;
+  margin-bottom: 6px;
+}
+
+.drawn-reveal-cards {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.drawn-mini-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  color: #cbd5e1;
+}
+
+.tressette-accusi-banner {
+  background: rgba(16, 185, 129, 0.22);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: #a7f3d0;
+  font-size: 0.84rem;
+  padding: 4px 14px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+
+.tressette-sigbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sigbar-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fde68a;
+}
+
+.tressette-hand-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-dimmed-illegal {
+  opacity: 0.38 !important;
+  filter: grayscale(45%);
+  transform: scale(0.94);
+  cursor: not-allowed !important;
+}
+.card-dimmed-illegal:hover {
+  transform: scale(0.95) !important;
+}
+
+
+

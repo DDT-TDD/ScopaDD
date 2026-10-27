@@ -1,0 +1,59 @@
+{
+  "name": "scopa-briscola-suite",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.cjs",
+  "description": "Scopa & Briscola — Premium Italian Card Game Suite (Offline, LAN & WebRTC Multiplayer)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 8135 --strictPort",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "electron": "electron .",
+    "dist:exe": "npm run build && electron-builder --win portable --dir"
+  },
+  "build": {
+    "appId": "com.scopa.suite",
+    "productName": "Scopa Suite",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": true,
+      "target": [
+        "dir",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    }
+  },
+  "devDependencies": {
+    "@types/howler": "^2.2.13",
+    "@types/node": "^22.13.0",
+    "@types/three": "^0.174.0",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vitest": "^3.0.7"
+  },
+  "dependencies": {
+    "howler": "^2.2.4",
+    "motion": "^12.4.7",
+    "three": "^0.174.0"
+  }
+}
